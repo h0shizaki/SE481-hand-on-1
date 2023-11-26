@@ -63,16 +63,30 @@ for i, db in enumerate(cleaned_db):
     print(' '.join(db) + " : " + str(raw[i]) + ' of ' + str(parsed_description.shape[0]))
 
 with_python = [None] * len(cleaned_db)
+with_java = [None] * len(cleaned_db)
 # Display counted python combination with database
 for i, db in enumerate(cleaned_db):
     with_python[i] = parsed_description.apply(lambda s: np.all([x in s for x in db]) and 'python' in s).sum()
     print(' '.join(db) + " + python: " + str(with_python[i]) + ' of ' + str(parsed_description.shape[0]))
 
 for i, db in enumerate(cleaned_db):
+    with_python[i] = parsed_description.apply(lambda s: np.all([x in s for x in db]) and 'python' in s).sum()
     # Display the percentage of the combination of db and python
     print(' '.join(db) + " + python: " + str(with_python[i]) + ' of ' + str(raw[i]) + ' (' + str(
         np.around(with_python[i] / raw[i] * 100, 2)) + '%)')
 
+
+for i, db in enumerate(cleaned_db):
+    # Display the percentage of the combination of db and java
+    with_java[i] = parsed_description.apply(lambda s: np.all([x in s for x in db]) and 'java' in s).sum()
+    print(' '.join(db) + " + java: " + str(with_java[i]) + ' of ' + str(raw[i]) + ' (' + str(
+        np.around(with_java[i] / raw[i] * 100, 2)) + '%)')
+
+for i, db in enumerate(cleaned_db):
+    # Display the percentage of the combination of db and java
+    with_java[i] = parsed_description.apply(lambda s: np.all([x in s for x in db]) and 'oracle' in s).sum()
+    print(' '.join(db) + " + oracle: " + str(with_java[i]) + ' of ' + str(raw[i]) + ' (' + str(
+        np.around(with_java[i] / raw[i] * 100, 2)) + '%)')
 
 # Creating the query map
 lang = [['java'], ['python'], ['c'], ['kotlin'], ['swift'], ['rust'], ['ruby'], ['scala'], ['julia'], ['lua']]
@@ -82,8 +96,38 @@ all_terms = lang + parse_db
 query_map = pd.DataFrame(
     parsed_description.apply(lambda s: [1 if np.all([d in s for d in db]) else 0 for db in all_terms]).values.tolist(),
     columns=[' '.join(d) for d in all_terms])
-print(query_map)
+# print(query_map)
 
 # Find the data which includes java
 print(query_map[query_map['java'] > 0].apply(lambda s: np.where(s == 1)[0], axis=1).apply(
     lambda s: list(query_map.columns[s])))
+
+# Find the data which includes python
+python_map_with_lang = query_map[query_map['python'] > 0].apply(lambda s: np.where(s == 1)[0], axis=1).apply(
+    lambda s: list(query_map.columns[s]))
+
+lang_count = {
+    'java': 0,
+    'c': 0,
+    'kotlin': 0,
+    'swift': 0,
+    'rust': 0,
+    'ruby': 0,
+    'scala': 0,
+    'julia': 0,
+    'lua': 0
+}
+
+# Count all elements which related to python
+for ind in python_map_with_lang.index:
+    for lang_element in python_map_with_lang[ind]:
+        if lang_element == 'python':
+            continue
+        if lang_element in lang_count:
+            lang_count[lang_element] = lang_count[lang_element] + 1
+        else:
+            lang_count[lang_element] = 0
+lang_count = dict(sorted(lang_count.items(), key=lambda item: item[1], reverse=True))
+print("programing language is in demand alongside python")
+summary = pd.DataFrame(lang_count.items(), columns=['Programming Language', 'Demand'])
+print(summary)
